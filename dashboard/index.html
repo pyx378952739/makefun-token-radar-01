@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Launch Radar — pre-token protocols ranked by implied value</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div>
+      <p class="eyebrow">TOKEN LAUNCH RADAR · MODEL radar-2</p>
+      <h1>Which pre-token protocol is worth farming next?</h1>
+      <p class="sub" id="meta">Loading snapshot…</p>
+    </div>
+    <div class="top-note">
+      <p>Every row is a protocol that <strong>records no token</strong> in the snapshot — never “has none”. Implied value is this radar’s own claim, not a prediction that a token will launch, or when.</p>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="stats" id="stats" aria-label="Board summary"></section>
+
+  <nav class="tabs" aria-label="Views">
+    <button data-view="board" class="on">Board</button>
+    <button data-view="live">Live tokens</button>
+    <button data-view="model">Model &amp; method</button>
+  </nav>
+
+  <section id="view-board">
+    <div class="controls">
+      <label>Search <input id="q" type="search" placeholder="name or slug…" autocomplete="off"></label>
+      <label>Category <select id="cat"><option value="">All categories</option></select></label>
+      <label>Chain <select id="chain"><option value="">All chains</option></select></label>
+      <label>Sort by
+        <select id="sort">
+          <option value="implied">Implied value</option>
+          <option value="tvl">TVL</option>
+          <option value="growth">7-day growth</option>
+          <option value="age">Age (oldest first)</option>
+          <option value="rank">Rank</option>
+        </select>
+      </label>
+      <label class="chk"><input id="wl" type="checkbox"> Watchlist only</label>
+      <label class="chk"><input id="early" type="checkbox"> Early finds only</label>
+    </div>
+    <p class="count" id="count"></p>
+    <div class="table-wrap">
+      <table id="board">
+        <thead><tr>
+          <th>#</th><th>Protocol</th><th>Category</th><th>Chains</th>
+          <th class="num">TVL</th><th class="num">7d</th><th class="num">Age</th>
+          <th class="num">Implied value</th><th class="bar-h">Share of #1</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="hint">Click any row for its full breakdown and farm plan. The board below the watchlist floor is where this radar earns its keep: every rankable pre-token protocol in the snapshot is ranked, not just the biggest forty.</p>
+
+    <section id="detail" class="detail" hidden aria-label="Protocol detail"></section>
+  </section>
+
+  <section id="view-live" hidden>
+    <h2>Live tokens — the market’s own values</h2>
+    <p class="lede">These protocols already trade. Their values below are the market’s, not the model’s, and they are kept apart from the ranked board on purpose: a token that exists is not a launch to farm. This table is also where the model’s pricing comes from — each category’s multiple is the median market-cap-to-TVL ratio of the live protocols in it.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Protocol</th><th>Category</th><th>Chains</th><th class="num">TVL</th><th class="num">Market cap</th><th class="num">7d</th></tr></thead>
+        <tbody id="live-rows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="view-model" hidden>
+    <h2>How the radar prices a launch</h2>
+    <div class="formula">
+      <p><code>implied = TVL × category multiple × growth × maturity × breadth</code></p>
+      <ul>
+        <li><strong>Category multiple</strong> — the median market-cap-to-TVL ratio of live protocols in the same category, shrunk toward the global median (4-protocol prior) and clamped to 0.05–1.50. No name is ever special-cased; the snapshot’s own market sets the price.</li>
+        <li><strong>Growth</strong> — <code>1 + clamp(7d change, −50%, +150%) × 0.6</code>. A protocol growing fast is worth more; a shrinking one less.</li>
+        <li><strong>Maturity</strong> — <code>0.7 + min(age, 1095 days) / 1095 × 0.5</code>. A protocol that has run for years with no token has more pent-up launch value. Unknown age counts as 365 days.</li>
+        <li><strong>Breadth</strong> — <code>1 + 0.03 × min(chains, 5)</code>. Multi-chain reach is worth a little more.</li>
+      </ul>
+    </div>
+
+    <h3>Try the model yourself</h3>
+    <p class="lede">Move a slider and the board re-ranks live, from the same snapshot figures. This is exploratory: the submitted board is the model as stated above.</p>
+    <div class="sandbox" id="sandbox">
+      <label>Growth weight <input type="range" id="sb-gw" min="0" max="1" step="0.05" value="0.6"><output id="sb-gw-v">0.60</output></label>
+      <label>Maturity weight <input type="range" id="sb-mw" min="0" max="1" step="0.05" value="0.5"><output id="sb-mw-v">0.50</output></label>
+      <label>Breadth per chain <input type="range" id="sb-bp" min="0" max="0.06" step="0.005" value="0.03"><output id="sb-bp-v">0.030</output></label>
+      <label>Base scale <input type="range" id="sb-sc" min="0.5" max="2" step="0.1" value="1"><output id="sb-sc-v">1.0×</output></label>
+      <button id="sb-reset" type="button">Reset to the submitted model</button>
+      <p id="sb-note" class="sb-note">Sandbox off — the board shows the submitted model.</p>
+    </div>
+
+    <h3>Calibration — where each multiple comes from</h3>
+    <p class="lede">Median market-cap-to-TVL of live protocols in the category, shrunk toward the global median. Categories with no live protocol fall back to the global multiple.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Category</th><th class="num">Multiple</th><th class="num">Live samples</th></tr></thead>
+        <tbody id="cal-rows"></tbody>
+      </table>
+    </div>
+
+    <h3>What this radar does not do</h3>
+    <ul class="plain">
+      <li>It does not predict whether or when a protocol issues a token. A high implied value means the launch <em>would</em> be valuable if the protocol’s record stayed as it is.</li>
+      <li>It takes the snapshot’s record at face value. A protocol on the watchlist may still have a token its record does not carry; a wrapped, staked or bridged product of a token that already trades is not a new launch.</li>
+      <li>Farm plans are generic by category, chain, size and age. They name no private deal, no insider round and no guaranteed allocation — because the snapshot carries none.</li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  <p id="foot">Data: DefiLlama protocols snapshot, frozen at fetch time. This page makes no network requests: all data ships with it. Implied values are the model’s claim, not financial advice.</p>
+</footer>
+
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
